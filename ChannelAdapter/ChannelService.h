@@ -81,10 +81,10 @@ namespace lpp
         /// <summary>
         /// 同步发送请求报文，等待回应
         /// </summary>
-        /// <param name="pReauest"></param>
+        /// <param name="pRequest"></param>
         /// <param name="oResponse"></param>
         /// <returns></returns>
-        eStatus SendSync(SPtrRequest pReauest, CResponse &oResponse);
+        eStatus SendSync(SPtrRequest pRequest, CResponse &oResponse);
 
         uint32_t GetNextReqId() { return ++m_ReqIndex; }
     private:

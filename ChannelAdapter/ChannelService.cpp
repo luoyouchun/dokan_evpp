@@ -11,8 +11,10 @@ Date    Author      Modification:
 *
 *---------------------------------------------------------------------------------*/
 
+
 #include "stdafx.h"
 #include "ChannelService.h"
+
 
 namespace lpp
 {
@@ -88,12 +90,80 @@ namespace lpp
 
     void ChannelService::OnMessage(CMessage * poMessage)
     {
+        switch (poMessage->getType())
+        {
+        // 请求报文，由线程池处理
+        case kRequest:
+        {
+            m_oThreadPool.addTask([this, poMessage = std::move(*poMessage)]()mutable
+            {
+                auto result = m_funMessageCallback(&poMessage);
+                m_poChannelAdapter->Send(&result);
+            });
+            break;
+        }
+        // 回应报文 
+        case kResponse:
+        {
+            std::lock_guard<std::mutex> lock(m_mutex);
+            auto pos = m_mapRequest.find(poMessage->getReqidx());
+            if (pos != m_mapRequest.end())
+            {
+                pos->second.set_value(std::make_shared<CMessage>(std::move(*poMessage)));
+            }
+            else
+            {
+                // Response timeout
+            }
+            break;
+        }            
+        default:
+            break;
+        }
 
     }
 
-    lpp::eStatus ChannelService::SendSync(SPtrRequest pReauest, CResponse &oResponse)
+    lpp::eStatus ChannelService::SendSync(SPtrRequest pRequest, CResponse &oResponse)
     {
+        std::shared_ptr<ResponsePromise> spResponsePromise = std::make_shared<ResponsePromise>();
+        auto ret = spResponsePromise->get_future();
 
+        if (m_poChannelAdapter->Send(pRequest.get()) && pRequest->getNeedResponse())
+        {
+            // send success then push to map
+            {
+                std::lock_guard<std::mutex> lock(m_mutex);
+                m_mapRequest.insert(std::make_pair(pRequest->getReqidx(), std::move(*spResponsePromise)));
+            }
+
+            // wait for response
+            int nTimeout = 0;
+            if (nTimeout == pRequest->getTimeout())
+            {
+                auto wait_result = ret.wait_for(std::chrono::milliseconds(nTimeout));
+                if (std::future_status::timeout == wait_result)
+                {
+                    // timeout
+                    int nIndex = pRequest->getReqidx();
+                    {
+                        std::lock_guard<std::mutex> lock(m_mutex);
+                        auto pos = m_mapRequest.find(nIndex);
+                        if (pos != m_mapRequest.end())
+                        {
+                            m_mapRequest.erase(pos);
+                        }
+                    }
+
+                    return eStatus::sTimeout;
+                }
+            }
+
+            // .deal the response
+            oResponse = std::move(*(ret.get().get()));
+            return eStatus::sSucceed;
+        }
+
+        return eStatus::sFailed;
     }
 
 }

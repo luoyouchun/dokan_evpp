@@ -21,7 +21,6 @@ Date    Author      Modification:
 
 namespace lpp
 {
-
     ChannelAdapter::ChannelAdapter(WriteCallback funWriteCallback, uint32_t nChannelType)
         :m_funWriteToChannel(funWriteCallback)
         , m_nChannelTyep(nChannelType)
@@ -40,7 +39,6 @@ namespace lpp
         pBuffer->Append(static_cast<const char *>(pData), uSize);
         return m_msgQueue.push(std::move(pBuffer));
     }
-
 
     void ChannelAdapter::SetMessageCallback(MessageCallback cb)
     {
@@ -122,8 +120,6 @@ namespace lpp
                     }
                 }
             }
-
         }
     }
-
 }
