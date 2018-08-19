@@ -20,16 +20,16 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>
-    <ProjectGuid>{7D52C32C-F627-43BC-A9E2-86D17A88E88D}</ProjectGuid>
+    <ProjectGuid>{E5E5F60B-25CE-422C-9281-8C8AA14B0EDE}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>ChannelAdapter</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
+    <RootNamespace>Mirror</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
@@ -90,7 +90,6 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)common;$(SolutionDir)x86-windows\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -148,37 +147,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\common\codec.h" />
-    <ClInclude Include="..\common\dllParser.hpp" />
-    <ClInclude Include="..\common\FormatArg.h" />
-    <ClInclude Include="..\common\log.h" />
-    <ClInclude Include="..\common\request.h" />
-    <ClInclude Include="..\common\response.h" />
-    <ClInclude Include="..\common\singleton.h" />
-    <ClInclude Include="..\common\structDef.h" />
-    <ClInclude Include="..\common\syncQueue.h" />
-    <ClInclude Include="..\common\system.h" />
-    <ClInclude Include="..\common\threads.h" />
-    <ClInclude Include="..\common\timer.h" />
-    <ClInclude Include="..\common\utils.h" />
-    <ClInclude Include="..\common\winmain-inl.h" />
-    <ClInclude Include="ChannelAdapter.h" />
-    <ClInclude Include="ChannelService.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\common\baseproxy.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="..\common\system.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="..\common\utils.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
-    </ClCompile>
-    <ClCompile Include="ChannelAdapter.cpp" />
-    <ClCompile Include="ChannelService.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>

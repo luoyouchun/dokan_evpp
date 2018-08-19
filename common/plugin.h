@@ -17,9 +17,9 @@ typedef bool (*PFUNCREADFROMCHANNEL)(UINT uSize, void *pData);
 typedef struct _PluginInfo
 {
     UINT                 uModelType;
-    PFUNCWRITERTOCHANNEL pFuncReadFromChannel;
+    PFUNCREADFROMCHANNEL pFuncReadFromChannel;
     HMODULE              hModule;
-};
+}PluginInfo,*PPluginInfo;
 
 #ifdef __cplusplus
 extern "C"
