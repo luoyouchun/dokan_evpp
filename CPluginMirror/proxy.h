@@ -29,19 +29,39 @@ namespace lpp
     {
     public:
         /// <summary>
-        /// 
+        /// 启动插件，插件的传输模块开始工作，插件管理者调用
         /// </summary>
+        /// <param name="pWriteToChannel">插件管理者提供的发送数据的接口回调函数</param>
         virtual void Start(void * pWriteToChannel) override;
 
+        /// <summary>
+        /// 停止插件工作，释放相关资源
+        /// </summary>
         virtual void Stop() override; 
 
+        /// <summary>
+        /// 获取插件分配的通通道ID，每个插件都是不一样的
+        /// </summary>
+        /// <returns>ID</returns>
         virtual uint32_t GetPluginType() override;
 
+        /// <summary>
+        /// 获取日志名称
+        /// </summary>
+        /// <returns>日志名</returns>
         virtual const char * GetLogName() const override;   
 
-        int Map(bool bReadonly, bool bNetwork, const TCHAR * pstrRootDirectory, uint32_t *pMountId);
+        /// <summary>
+        /// 开始磁盘映射
+        /// </summary>
+        /// <param name="bReadonly">是否只读</param>
+        /// <param name="bNetwork">是否网络磁盘映射</param>
+        /// <param name="pstrRootDirectory">本地映射的磁盘目录</param>
+        /// <param name="pMountId">映射成功后的ID</param>
+        /// <returns>映射结果</returns>
+        int Map(bool bReadonly, bool bNetwork, const TCHAR * pstrRootDirectory, unsigned long* pMountId);
 
-        int UnMap(uint32_t MountId);
+        int UnMap(unsigned long nMountId);
 
         int GetMaps(uint32_t nSize, void * pBuffer);
 

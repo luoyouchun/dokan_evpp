@@ -1,0 +1,9 @@
+LIBRARY
+EXPORTS
+Register
+InitModule
+UnInitModule
+map
+unmap
+setLogLevel
+GetMaps
