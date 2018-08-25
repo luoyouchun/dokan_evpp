@@ -31,7 +31,6 @@ THE SOFTWARE.
 #include <stdio.h>
 #include <stdlib.h>
 #include <winbase.h>
-#include <Windows.h>
 
 //#define WIN10_ENABLE_LONG_PATH
 #ifdef WIN10_ENABLE_LONG_PATH

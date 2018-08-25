@@ -233,7 +233,7 @@ int DOKANAPI DokanMain(PDOKAN_OPTIONS DokanOptions,
   }
 
   DbgPrint("device opened\n");
-  instance = NewDokanInstance();
+  instance = NewDokanInstance();     // 映射实例，需要返回去给调用者
   instance->DokanOptions = DokanOptions;
   instance->DokanOperations = DokanOperations;
 
@@ -279,6 +279,7 @@ int DOKANAPI DokanMain(PDOKAN_OPTIONS DokanOptions,
                                                     NULL);
   }
 
+    // 2.挂载磁盘
   if (!DokanMount(instance->MountPoint, instance->DeviceName, DokanOptions)) {
     SendReleaseIRP(instance->DeviceName);
     DokanDbgPrint("Dokan Error: DokanMount Failed\n");
@@ -298,7 +299,7 @@ int DOKANAPI DokanMain(PDOKAN_OPTIONS DokanOptions,
     DokanOperations->Mounted(&fileInfo);
   }
 
-  // wait for thread terminations
+    // 3.wait for thread terminations
   WaitForMultipleObjects(threadNum, threadIds, TRUE, INFINITE);
 
   for (i = 0; i < threadNum; ++i) {
@@ -350,7 +351,7 @@ UINT WINAPI DokanLoop(PDOKAN_INSTANCE DokanInstance) {
   DWORD lastError = 0;
   WCHAR rawDeviceName[MAX_PATH];
 
-  buffer = malloc(sizeof(char) * EVENT_CONTEXT_MAX_SIZE);
+  buffer = (char *)malloc(sizeof(char) * EVENT_CONTEXT_MAX_SIZE);
   if (buffer == NULL) {
     result = (DWORD)-1;
     _endthreadex(result);
@@ -636,7 +637,7 @@ BOOL SendGlobalReleaseIRP(LPCWSTR MountPoint) {
       ULONG returnedLength;
       ULONG inputLength = sizeof(DOKAN_UNICODE_STRING_INTERMEDIATE) +
                           (MAX_PATH * sizeof(WCHAR));
-      PDOKAN_UNICODE_STRING_INTERMEDIATE szMountPoint = malloc(inputLength);
+      PDOKAN_UNICODE_STRING_INTERMEDIATE szMountPoint = (PDOKAN_UNICODE_STRING_INTERMEDIATE)malloc(inputLength);
 
       if (szMountPoint != NULL) {
         ZeroMemory(szMountPoint, inputLength);
@@ -781,10 +782,10 @@ BOOL SendToDevice(LPCWSTR DeviceName, DWORD IoControlCode, PVOID InputBuffer,
 BOOL DOKANAPI DokanGetMountPointList(PDOKAN_CONTROL list, ULONG length,
                                      BOOL uncOnly, PULONG nbRead) {
   ULONG returnedLength = 0;
-  PDOKAN_CONTROL dokanControl =
-      malloc(DOKAN_MAX_INSTANCES * sizeof(*dokanControl));
-  if (dokanControl == NULL) {
-    return FALSE;
+  PDOKAN_CONTROL dokanControl = (PDOKAN_CONTROL)malloc(DOKAN_MAX_INSTANCES * sizeof(*dokanControl));
+  if (dokanControl == NULL)
+  {
+      return FALSE;
   }
 
   ZeroMemory(dokanControl, DOKAN_MAX_INSTANCES * sizeof(*dokanControl));
