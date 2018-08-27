@@ -54,7 +54,7 @@ static void DbgPrint(LPCWSTR format, ...) {
 
     va_start(argp, format);
     length = _vscwprintf(format, argp) + 1;
-    buffer = _malloca(length * sizeof(WCHAR));
+    buffer = (WCHAR*)_malloca(length * sizeof(WCHAR));
     if (buffer) {
       vswprintf_s(buffer, length, format, argp);
       outputString = buffer;

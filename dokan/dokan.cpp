@@ -171,12 +171,12 @@ void CheckAllocationUnitSectorSize(PDOKAN_OPTIONS DokanOptions) {
 }
 
 int DOKANAPI DokanMain(PDOKAN_OPTIONS DokanOptions,
-                       PDOKAN_OPERATIONS DokanOperations) {
-  ULONG threadNum = 0;
-  ULONG i;
-  HANDLE device;
-  HANDLE threadIds[DOKAN_MAX_THREAD];
-  PDOKAN_INSTANCE instance;
+                       PDOKAN_OPERATIONS DokanOperations,
+                       void ** ppDokanInstance)
+{
+    ULONG i;
+  HANDLE device = INVALID_HANDLE_VALUE;
+  PDOKAN_INSTANCE pInstance = NULL;
 
   g_DebugMode = DokanOptions->Options & DOKAN_OPTION_DEBUG;
   g_UseStdErr = DokanOptions->Options & DOKAN_OPTION_STDERR;
@@ -231,19 +231,24 @@ int DOKANAPI DokanMain(PDOKAN_OPTIONS DokanOptions,
                    DOKAN_GLOBAL_DEVICE_NAME, GetLastError());
     return DOKAN_DRIVER_INSTALL_ERROR;
   }
-
-  DbgPrint("device opened\n");
-  instance = NewDokanInstance();     // 映射实例，需要返回去给调用者
-  instance->DokanOptions = DokanOptions;
-  instance->DokanOperations = DokanOperations;
+  else
+  {
+      CloseHandle(device);
+      DbgPrint("device opened\n");
+  }
+  
+  *ppDokanInstance = NewDokanInstance();     // 映射实例，需要返回去给调用者
+  pInstance = (PDOKAN_INSTANCE )*ppDokanInstance;
+  pInstance->DokanOptions = DokanOptions;
+  pInstance->DokanOperations = DokanOperations;
 
   if (DokanOptions->MountPoint != NULL) {
-    wcscpy_s(instance->MountPoint, sizeof(instance->MountPoint) / sizeof(WCHAR),
+    wcscpy_s(pInstance->MountPoint, sizeof(pInstance->MountPoint) / sizeof(WCHAR),
              DokanOptions->MountPoint);
-    if (IsMountPointDriveLetter(instance->MountPoint)
-      && !CheckDriveLetterAvailability(instance->MountPoint[0])) {
+    if (IsMountPointDriveLetter(pInstance->MountPoint)
+      && !CheckDriveLetterAvailability(pInstance->MountPoint[0])) {
         DokanDbgPrint("Dokan Error: CheckDriveLetterAvailability Failed\n");
-        CloseHandle(device);
+        //CloseHandle(device);
 
         EnterCriticalSection(&g_InstanceCriticalSection);
         RemoveTailList(&g_InstanceList);
@@ -253,60 +258,94 @@ int DOKANAPI DokanMain(PDOKAN_OPTIONS DokanOptions,
   }
 
   if (DokanOptions->UNCName != NULL) {
-    wcscpy_s(instance->UNCName, sizeof(instance->UNCName) / sizeof(WCHAR),
+    wcscpy_s(pInstance->UNCName, sizeof(pInstance->UNCName) / sizeof(WCHAR),
              DokanOptions->UNCName);
   }
 
-  if (!DokanStart(instance)) {
-    CloseHandle(device);
-    return DOKAN_START_ERROR;
+  if (!DokanStart(pInstance))
+  {
+    //CloseHandle(device);
+      return DOKAN_START_ERROR;
+  }
+  else
+  {
+      DokanOptions->MountId = pInstance->MountId;
   }
 
   // Start Keep Alive thread
-  threadIds[threadNum++] = (HANDLE)_beginthreadex(NULL, // Security Attributes
+  pInstance->threadIds[pInstance->threadNum++] = (HANDLE)_beginthreadex(NULL, // Security Attributes
                                                   0,    // stack size
                                                   DokanKeepAlive,
-                                                  (PVOID)instance, // param
+                                                  (PVOID)pInstance, // param
                                                   0, // create flag
                                                   NULL);
 
-  for (i = 0; i < DokanOptions->ThreadCount; ++i) {
-    threadIds[threadNum++] = (HANDLE)_beginthreadex(NULL, // Security Attributes
+  for (i = 0; i < DokanOptions->ThreadCount; ++i)
+  {
+      pInstance->threadIds[pInstance->threadNum++] = (HANDLE)_beginthreadex(NULL, // Security Attributes
                                                     0,    // stack size
                                                     DokanLoop,
-                                                    (PVOID)instance, // param
+                                                    (PVOID)pInstance, // param
                                                     0, // create flag
                                                     NULL);
   }
 
+  return DOKAN_SUCCESS;
+}
+
+int DOKANAPI DokanMountEx(void * pDokanInstance,
+                          PDOKAN_OPTIONS DokanOptions,
+                          PDOKAN_OPERATIONS DokanOperations)
+{
+    PDOKAN_INSTANCE pInstance = (PDOKAN_INSTANCE)pDokanInstance;
+
+    if (NULL == pInstance)
+    {
+        return DOKAN_MOUNT_ERROR;
+    }
+
     // 2.挂载磁盘
-  if (!DokanMount(instance->MountPoint, instance->DeviceName, DokanOptions)) {
-    SendReleaseIRP(instance->DeviceName);
-    DokanDbgPrint("Dokan Error: DokanMount Failed\n");
-    CloseHandle(device);
-    return DOKAN_MOUNT_ERROR;
-  }
+    if (!DokanMount(pInstance->MountPoint, pInstance->DeviceName, DokanOptions))
+    {
+        SendReleaseIRP(pInstance->DeviceName);
+        DokanDbgPrint("Dokan Error: DokanMount Failed\n");
+        return DOKAN_MOUNT_ERROR;
+    }
 
-  // Here we should have been mounter by mountmanager thanks to
-  // IOCTL_MOUNTDEV_QUERY_SUGGESTED_LINK_NAME
-  DbgPrintW(L"mounted: %s -> %s\n", instance->MountPoint, instance->DeviceName);
+    // Here we should have been mounter by mountmanager thanks to
+    // IOCTL_MOUNTDEV_QUERY_SUGGESTED_LINK_NAME
+    DbgPrintW(L"mounted: %s -> %s\n", pInstance->MountPoint, pInstance->DeviceName);
 
-  if (DokanOperations->Mounted) {
-    DOKAN_FILE_INFO fileInfo;
-    RtlZeroMemory(&fileInfo, sizeof(DOKAN_FILE_INFO));
-    fileInfo.DokanOptions = DokanOptions;
-    // ignore return value
-    DokanOperations->Mounted(&fileInfo);
-  }
+    if (DokanOperations->Mounted)
+    {
+        DOKAN_FILE_INFO fileInfo;
+        RtlZeroMemory(&fileInfo, sizeof(DOKAN_FILE_INFO));
+        fileInfo.DokanOptions = DokanOptions;
+        // ignore return value
+        DokanOperations->Mounted(&fileInfo);
+    }
+
+    return DOKAN_SUCCESS;
+}
+int DOKANAPI DokanExit(PDOKAN_OPTIONS DokanOptions,
+                       PDOKAN_OPERATIONS DokanOperations,
+                       PVOID  pDokanInstance)
+{
+    PDOKAN_INSTANCE pInstance = (PDOKAN_INSTANCE)pDokanInstance;
+
+    if (NULL == pInstance)
+    {
+        return DOKAN_SUCCESS;
+    }
 
     // 3.wait for thread terminations
-  WaitForMultipleObjects(threadNum, threadIds, TRUE, INFINITE);
+  WaitForMultipleObjects(pInstance->threadNum, pInstance->threadIds, TRUE, INFINITE);
 
-  for (i = 0; i < threadNum; ++i) {
-    CloseHandle(threadIds[i]);
+  for (ULONG i = 0; i < pInstance->threadNum; ++i)
+  {
+    CloseHandle(pInstance->threadIds[i]);
   }
 
-  CloseHandle(device);
 
   if (DokanOperations->Unmounted) {
     DOKAN_FILE_INFO fileInfo;
@@ -316,11 +355,9 @@ int DOKANAPI DokanMain(PDOKAN_OPTIONS DokanOptions,
     DokanOperations->Unmounted(&fileInfo);
   }
 
-  Sleep(1000);
-
   DbgPrint("\nunload\n");
 
-  DeleteDokanInstance(instance);
+  DeleteDokanInstance(pInstance);
 
   return DOKAN_SUCCESS;
 }
@@ -342,7 +379,13 @@ void ALIGN_ALLOCATION_SIZE(PLARGE_INTEGER size, PDOKAN_OPTIONS DokanOptions) {
       (size->QuadPart + (r > 0 ? DokanOptions->AllocationUnitSize - r : 0));
 }
 
-UINT WINAPI DokanLoop(PDOKAN_INSTANCE DokanInstance) {
+#ifdef __cplusplus
+extern "C" {
+#endif
+UINT __stdcall DokanLoop(PVOID  para)
+{
+    PDOKAN_INSTANCE DokanInstance = (PDOKAN_INSTANCE)para;
+
   HANDLE device = INVALID_HANDLE_VALUE;
   char *buffer = NULL;
   BOOL status;
@@ -478,6 +521,10 @@ UINT WINAPI DokanLoop(PDOKAN_INSTANCE DokanInstance) {
 
   return result;
 }
+
+#ifdef __cplusplus
+}
+#endif
 
 VOID SendEventInformation(HANDLE Handle, PEVENT_INFORMATION EventInfo,
                           ULONG EventLength, PDOKAN_INSTANCE DokanInstance) {

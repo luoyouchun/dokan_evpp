@@ -122,6 +122,9 @@ typedef struct _DOKAN_OPTIONS {
   ULONG AllocationUnitSize;
   /** Sector Size of the volume. This will affect the file size. */
   ULONG SectorSize;
+
+  /** Mount ID */
+  ULONG MountId;
 } DOKAN_OPTIONS, *PDOKAN_OPTIONS;
 
 /**
@@ -727,15 +730,45 @@ typedef struct _DOKAN_OPERATIONS {
 /**
  * \brief Mount a new Dokan Volume.
  *
- * This function block until the device is unmounted.
- * If the mount fails, it will directly return a \ref DokanMainResult error.
+ * If Create doann disk fails, it will directly return a \ref DokanMainResult error.
  *
  * \param DokanOptions a \ref DOKAN_OPTIONS that describe the mount.
  * \param DokanOperations Instance of \ref DOKAN_OPERATIONS that will be called for each request made by the kernel.
+ * \param ppDokanInstance Instace of Dokan
  * \return \ref DokanMainResult status.
  */
 int DOKANAPI DokanMain(PDOKAN_OPTIONS DokanOptions,
-                       PDOKAN_OPERATIONS DokanOperations);
+                       PDOKAN_OPERATIONS DokanOperations,
+                       void ** ppDokanInstance);
+
+
+/**
+* \brief mouunt doany disk
+*
+* If the mount fails, it will directly return a \ref DokanMainResult error.
+*
+* \param DokanOptions a \ref DOKAN_OPTIONS that describe the mount.
+* \param DokanOperations Instance of \ref DOKAN_OPERATIONS that will be called for each request made by the kernel.
+* \param pDokanInstance Instace of Dokan
+* \return \ref DokanMainResult status.
+*/
+int DOKANAPI DokanMountEx(void * pDokanInstance,
+                          PDOKAN_OPTIONS DokanOptions,
+                          PDOKAN_OPERATIONS DokanOperations);
+/**
+* \brief unmouunt doany disk
+*
+* This function block until the device is unmounted.
+* If the mount fails, it will directly return a \ref DokanMainResult error.
+*
+* \param DokanOptions a \ref DOKAN_OPTIONS that describe the mount.
+* \param DokanOperations Instance of \ref DOKAN_OPERATIONS that will be called for each request made by the kernel.
+* \param pDokanInstance Instace of Dokan
+* \return \ref DokanMainResult status.
+*/
+int DOKANAPI DokanExit(PDOKAN_OPTIONS DokanOptions,
+                       PDOKAN_OPERATIONS DokanOperations,
+                       PVOID  pDokanInstance);
 
 /**
  * \brief Unmount a Dokan device from a driver letter.

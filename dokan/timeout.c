@@ -64,7 +64,7 @@ BOOL DOKANAPI DokanResetTimeout(ULONG Timeout, PDOKAN_FILE_INFO FileInfo) {
   return status;
 }
 
-UINT WINAPI DokanKeepAlive(PDOKAN_INSTANCE DokanInstance) {
+UINT __stdcall DokanKeepAlive(PDOKAN_INSTANCE DokanInstance) {
   HANDLE device;
   ULONG ReturnedLength;
   WCHAR rawDeviceName[MAX_PATH];

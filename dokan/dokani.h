@@ -68,6 +68,10 @@ typedef struct _DOKAN_INSTANCE {
   /** DOKAN_OPERATIONS linked to the mount */
   PDOKAN_OPERATIONS DokanOperations;
 
+  /** Ïß³Ì*/
+  HANDLE threadIds[DOKAN_MAX_THREAD];
+  ULONG  threadNum;
+
   /** Current list entry informations */
   LIST_ENTRY ListEntry;
 } DOKAN_INSTANCE, *PDOKAN_INSTANCE;
@@ -108,8 +112,6 @@ GetRawDeviceName(LPCWSTR DeviceName, LPWSTR DestinationBuffer,
                  rsize_t DestinationBufferSizeInElements);
 
 void ALIGN_ALLOCATION_SIZE(PLARGE_INTEGER size, PDOKAN_OPTIONS DokanOptions);
-
-UINT __stdcall DokanLoop(PVOID Param);
 
 BOOL DokanMount(LPCWSTR MountPoint, LPCWSTR DeviceName,
                 PDOKAN_OPTIONS DokanOptions);
@@ -188,7 +190,6 @@ VOID ClearFindData(PLIST_ENTRY ListHead);
 
 VOID ClearFindStreamData(PLIST_ENTRY ListHead);
 
-UINT WINAPI DokanKeepAlive(PVOID Param);
 
 PDOKAN_OPEN_INFO
 GetDokanOpenInfo(PEVENT_CONTEXT EventInfomation, PDOKAN_INSTANCE DokanInstance);
@@ -196,8 +197,14 @@ GetDokanOpenInfo(PEVENT_CONTEXT EventInfomation, PDOKAN_INSTANCE DokanInstance);
 VOID ReleaseDokanOpenInfo(PEVENT_INFORMATION EventInfomation,
                           PDOKAN_INSTANCE DokanInstance);
 
+UINT __stdcall DokanLoop(PVOID Param);
+UINT __stdcall DokanKeepAlive(PVOID Param);
+
 #ifdef __cplusplus
 }
 #endif
+
+
+
 
 #endif // DOKANI_H_
