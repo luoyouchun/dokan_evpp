@@ -31,6 +31,7 @@ THE SOFTWARE.
 #include <stdio.h>
 #include <stdlib.h>
 #include <winbase.h>
+#include <thread>
 
 //#define WIN10_ENABLE_LONG_PATH
 #ifdef WIN10_ENABLE_LONG_PATH
@@ -1696,11 +1697,22 @@ int __cdecl wmain(ULONG argc, PWCHAR argv[]) {
   dokanOperations->Unmounted = MirrorUnmounted;
   dokanOperations->FindStreams = MirrorFindStreams;
   dokanOperations->Mounted = MirrorMounted;
-
-  status = DokanMain(dokanOptions, dokanOperations);
-  switch (status) {
+  void * pDokanInstance = NULL;
+  status = DokanMain(dokanOptions, dokanOperations, &pDokanInstance);
+  switch (status)
+  {
   case DOKAN_SUCCESS:
-    fprintf(stderr, "Success\n");
+      fprintf(stderr, "Success\n");
+     if (DOKAN_SUCCESS == DokanMountEx(pDokanInstance, dokanOptions, dokanOperations))
+     {
+         std::thread th([pDokanInstance, dokanOptions, dokanOperations]()
+         {
+             DokanExit(dokanOptions, dokanOperations, pDokanInstance);
+         });
+         th.detach();
+     }
+      
+    
     break;
   case DOKAN_ERROR:
     fprintf(stderr, "Error\n");

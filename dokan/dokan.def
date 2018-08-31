@@ -5,6 +5,7 @@ EXPORTS
 
 DokanMain
 DokanMountEx
+DokanExit
 DokanUnmount
 DokanIsNameInExpression
 DokanServiceInstall
